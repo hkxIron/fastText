@@ -28,7 +28,7 @@
 #include "utils.h"
 #include "vector.h"
 
-#pragma message("getVector is being deprecated and replaced by getWordVector.")
+// #pragma message("getVector is being deprecated and replaced by getWordVector.")
 
 namespace fasttext {
 
