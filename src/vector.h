@@ -13,7 +13,7 @@
 #include <cstdint>
 #include <ostream>
 
-#include "real.h"
+#include "real.h"  // real 为 double 或float
 
 namespace fasttext {
 

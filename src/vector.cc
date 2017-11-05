@@ -38,6 +38,7 @@ void Vector::zero() {
   }
 }
 
+// 向量的二范数
 real Vector::norm() const {
   real sum = 0;
   for (int64_t i = 0; i < m_; i++) {
@@ -46,12 +47,14 @@ real Vector::norm() const {
   return std::sqrt(sum);
 }
 
+// 向量本身乘以常数a, v *= a
 void Vector::mul(real a) {
   for (int64_t i = 0; i < m_; i++) {
     data_[i] *= a;
   }
 }
 
+// 向量本身加上向量source, v += a
 void Vector::addVector(const Vector& source) {
   assert(m_ == source.m_);
   for (int64_t i = 0; i < m_; i++) {
@@ -59,6 +62,7 @@ void Vector::addVector(const Vector& source) {
   }
 }
 
+//  v += s*v_source
 void Vector::addVector(const Vector& source, real s) {
   assert(m_ == source.m_);
   for (int64_t i = 0; i < m_; i++) {
@@ -66,6 +70,7 @@ void Vector::addVector(const Vector& source, real s) {
   }
 }
 
+// v += A_mat[i,:], 取A中的第i行
 void Vector::addRow(const Matrix& A, int64_t i) {
   assert(i >= 0);
   assert(i < A.m_);
@@ -75,6 +80,7 @@ void Vector::addRow(const Matrix& A, int64_t i) {
   }
 }
 
+// v += a * A_mat[i,:]
 void Vector::addRow(const Matrix& A, int64_t i, real a) {
   assert(i >= 0);
   assert(i < A.m_);
@@ -89,11 +95,12 @@ void Vector::addRow(const QMatrix& A, int64_t i) {
   A.addToVector(*this, i);
 }
 
+// v += A_mat * v_vec, 矩阵A乘以向量v
 void Vector::mul(const Matrix& A, const Vector& vec) {
   assert(A.m_ == m_);
   assert(A.n_ == vec.m_);
   for (int64_t i = 0; i < m_; i++) {
-    data_[i] = A.dotRow(vec, i);
+    data_[i] = A.dotRow(vec, i); // A的第i行
   }
 }
 
@@ -105,6 +112,7 @@ void Vector::mul(const QMatrix& A, const Vector& vec) {
   }
 }
 
+// 找出向量V中最大的元素
 int64_t Vector::argmax() {
   real max = data_[0];
   int64_t argmax = 0;
@@ -117,10 +125,12 @@ int64_t Vector::argmax() {
   return argmax;
 }
 
+// 返回引用
 real& Vector::operator[](int64_t i) {
   return data_[i];
 }
 
+// 返回常引用
 const real& Vector::operator[](int64_t i) const {
   return data_[i];
 }
@@ -133,5 +143,4 @@ std::ostream& operator<<(std::ostream& os, const Vector& v)
   }
   return os;
 }
-
 }

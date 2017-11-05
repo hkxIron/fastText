@@ -23,7 +23,7 @@ class Vector;
 class Matrix {
 
   public:
-    real* data_;
+    real* data_; // m行n列的矩阵
     int64_t m_;
     int64_t n_;
 

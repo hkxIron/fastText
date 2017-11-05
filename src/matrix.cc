@@ -21,7 +21,7 @@ namespace fasttext {
 Matrix::Matrix() {
   m_ = 0;
   n_ = 0;
-  data_ = nullptr;
+  data_ = nullptr; // 初始化为空指针
 }
 
 Matrix::Matrix(int64_t m, int64_t n) {
@@ -30,15 +30,17 @@ Matrix::Matrix(int64_t m, int64_t n) {
   data_ = new real[m * n];
 }
 
+// 拷贝构造
 Matrix::Matrix(const Matrix& other) {
   m_ = other.m_;
   n_ = other.n_;
-  data_ = new real[m_ * n_];
+  data_ = new real[m_ * n_]; // 这里并没有判断，若data_已经有值的情况
   for (int64_t i = 0; i < (m_ * n_); i++) {
     data_[i] = other.data_[i];
   }
 }
 
+// 赋值构造
 Matrix& Matrix::operator=(const Matrix& other) {
   Matrix temp(other);
   m_ = temp.m_;
@@ -65,6 +67,7 @@ void Matrix::uniform(real a) {
   }
 }
 
+// dot = A_mat[i,:].T*v_vec
 real Matrix::dotRow(const Vector& vec, int64_t i) const {
   assert(i >= 0);
   assert(i < m_);
@@ -76,15 +79,17 @@ real Matrix::dotRow(const Vector& vec, int64_t i) const {
   return d;
 }
 
+// A[i,:] += a * v_vec
 void Matrix::addRow(const Vector& vec, int64_t i, real a) {
   assert(i >= 0);
   assert(i < m_);
   assert(vec.size() == n_);
   for (int64_t j = 0; j < n_; j++) {
-    data_[i * n_ + j] += a * vec.data_[j];
+    data_[i * n_ + j] += a * vec.data_[j]; // 这里即是a(i,j)
   }
 }
 
+// A[ib:ie,:] 与 v_nums里的元素逐行对应相乘， 而非普通的矩阵与向量乘法
 void Matrix::multiplyRow(const Vector& nums, int64_t ib, int64_t ie) {
   if (ie == -1) {ie = m_;}
   assert(ie <= nums.size());
@@ -92,12 +97,13 @@ void Matrix::multiplyRow(const Vector& nums, int64_t ib, int64_t ie) {
     real n = nums[i-ib];
     if (n != 0) {
       for (auto j = 0; j < n_; j++) {
-        at(i, j) *= n;
+        at(i, j) *= n; // 矩阵A的每列乘以的是相同的元素
       }
     }
   }
 }
 
+// A[ib:ie,:] 与 v_nums里的元素逐行对应相除
 void Matrix::divideRow(const Vector& denoms, int64_t ib, int64_t ie) {
   if (ie == -1) {ie = m_;}
   assert(ie <= denoms.size());
@@ -111,6 +117,7 @@ void Matrix::divideRow(const Vector& denoms, int64_t ib, int64_t ie) {
   }
 }
 
+// 对于矩阵第i行向量取2范数
 real Matrix::l2NormRow(int64_t i) const {
   auto norm = 0.0;
   for (auto j = 0; j < n_; j++) {
@@ -120,6 +127,8 @@ real Matrix::l2NormRow(int64_t i) const {
   return std::sqrt(norm);
 }
 
+
+// 将矩阵所有行向量2范数存入 norms
 void Matrix::l2NormRow(Vector& norms) const {
   assert(norms.size() == m_);
     for (auto i = 0; i < m_; i++) {
@@ -128,9 +137,9 @@ void Matrix::l2NormRow(Vector& norms) const {
 }
 
 void Matrix::save(std::ostream& out) {
-  out.write((char*) &m_, sizeof(int64_t));
-  out.write((char*) &n_, sizeof(int64_t));
-  out.write((char*) data_, m_ * n_ * sizeof(real));
+  out.write((char*) &m_, sizeof(int64_t)); // 行数
+  out.write((char*) &n_, sizeof(int64_t)); // 列数
+  out.write((char*) data_, m_ * n_ * sizeof(real)); // 指针为何不写real*
 }
 
 void Matrix::load(std::istream& in) {
