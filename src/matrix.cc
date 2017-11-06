@@ -137,7 +137,7 @@ void Matrix::l2NormRow(Vector& norms) const {
 }
 
 void Matrix::save(std::ostream& out) {
-  out.write((char*) &m_, sizeof(int64_t)); // 行数
+  out.write((char*) &m_, sizeof(int64_t)); // 行数，ostream的参数要求char*
   out.write((char*) &n_, sizeof(int64_t)); // 列数
   out.write((char*) data_, m_ * n_ * sizeof(real)); // 指针为何不写real*
 }
