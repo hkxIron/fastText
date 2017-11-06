@@ -49,12 +49,19 @@ void Model::setQuantizePointer(std::shared_ptr<QMatrix> qwi,
 }
 
 real Model::binaryLogistic(int32_t target, bool label, real lr) {
+  // 将 hidden_ 和参数矩阵的第 target 行做内积，并计算 sigmoid
   real score = sigmoid(wo_->dotRow(hidden_, target));
+  // 计算梯度时的中间变量
+  // - dLoss/da = (yi-p) ,即1-p或者 -p,
   real alpha = lr * (real(label) - score);
+  // Loss 对于 hidden_ 的梯度累加到 grad_ 上
   grad_.addRow(*wo_, target, alpha);
+  // Loss 对于 LR 参数的梯度累加到 wo_ 的对应行上
   wo_->addRow(hidden_, target, alpha);
+  // LR 的 Loss
+  // -(yi*logpi+(1-yi)*log(1-pi))
   if (label) {
-    return -log(score);
+    return -log(score); 
   } else {
     return -log(1.0 - score);
   }
@@ -119,16 +126,19 @@ real Model::softmax(int32_t target, real lr) {
   return -log(output_[target]);
 }
 
+// 计算前向传播：输入层 -> 隐层
 void Model::computeHidden(const std::vector<int32_t>& input, Vector& hidden) const {
   assert(hidden.size() == hsz_);
   hidden.zero();
   for (auto it = input.cbegin(); it != input.cend(); ++it) {
-    if(quant_) {
+    if(quant_) { // 是否对向量进行量化
       hidden.addRow(*qwi_, *it);
     } else {
-      hidden.addRow(*wi_, *it);
+      // 将矩阵wi中的第*it行累加到hidden中
+      hidden.addRow(*wi_, *it); 
     }
   }
+  // 求和后除以输入词个数，得到均值向量
   hidden.mul(1.0 / input.size());
 }
 
@@ -205,23 +215,39 @@ void Model::dfs(int32_t k, int32_t node, real score,
   dfs(k, tree[node].right, score + log(f), heap, hidden);
 }
 
+/**
+ * 输入是一个 int32_t 数组，每个元素代表一个词在 dictionary 里的 ID。对于分类问题，这个数组代表输入的短文本，对于 word2vec，这个数组代表一个词的上下文。
+
+类标签是一个 int32_t 变量。对于 word2vec 来说，它就是带预测的词的 ID，对于分类问题，它就是类的 label 在 dictionary 里的 ID。因为label 和词在词表里一起存放，所以有统一的 ID 体系
+ */
 void Model::update(const std::vector<int32_t>& input, int32_t target, real lr) {
   assert(target >= 0);
   assert(target < osz_);
   if (input.size() == 0) return;
+  // 前向传播计算隐层
   computeHidden(input, hidden_);
+  // 计算loss
+  // 根据输出层的不同结构，调用不同的函数，在各个函数中，
+  // 不仅通过前向传播算出了 loss_，还进行了反向传播，计算出了 grad_，后面逐一分析。
+  // 1. 负采样
   if (args_->loss == loss_name::ns) {
     loss_ += negativeSampling(target, lr);
   } else if (args_->loss == loss_name::hs) {
+    // 2. 层次 softmax
     loss_ += hierarchicalSoftmax(target, lr);
   } else {
+    // 3. 普通 softmax
     loss_ += softmax(target, lr);
   }
+
   nexamples_ += 1;
 
+  // 如果是在训练分类器，就将 grad_ 除以 input_ 的大小
+  // 原因不明
   if (args_->model == model_name::sup) {
     grad_.mul(1.0 / input.size());
   }
+  // 反向传播，将 hidden_ 上的梯度传播到 wi_ 上的对应行
   for (auto it = input.cbegin(); it != input.cend(); ++it) {
     wi_->addRow(grad_, *it, 1.0);
   }
@@ -338,6 +364,7 @@ real Model::sigmoid(real x) const {
   } else if (x > MAX_SIGMOID) {
     return 1.0;
   } else {
+    // 利用查表来加速计算
     int i = int((x + MAX_SIGMOID) * SIGMOID_TABLE_SIZE / MAX_SIGMOID / 2);
     return t_sigmoid[i];
   }

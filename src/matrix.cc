@@ -61,6 +61,7 @@ void Matrix::zero() {
 
 void Matrix::uniform(real a) {
   std::minstd_rand rng(1);
+  // 正态分布范围在 (-a, a) 之间
   std::uniform_real_distribution<> uniform(-a, a);
   for (int64_t i = 0; i < (m_ * n_); i++) {
     data_[i] = uniform(rng);
