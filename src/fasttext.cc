@@ -721,6 +721,7 @@ void FastText::startThreads() {
   if (args_->thread > 1) {
     std::vector<std::thread> threads;
     for (int32_t i = 0; i < args_->thread; i++) {
+      // lambda表达式，[=] 以值的方式捕获所有的外部自动变量。
       threads.push_back(std::thread([=]() { trainThread(i); }));
     }
     for (auto it = threads.begin(); it != threads.end(); ++it) {
